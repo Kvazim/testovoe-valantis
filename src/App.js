@@ -2,7 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { getAuhToken } from './utils/common';
 import { BaseURL } from './const';
-import { getToken, saveToken } from './services/token';
+
+const Loaded = () => {
+    return <div>Loading........</div>;
+}
 
 const App = () => {
     const [products, setProducts] = useState([]);
@@ -10,10 +13,9 @@ const App = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        saveToken(getAuhToken());
-    }, [])
+    const authString = getAuhToken();
 
     const retryGetDetailedProducts = useCallback(async (ids) => {
         try {
@@ -22,14 +24,14 @@ const App = () => {
                 params: { ids }
             }, {
                 headers: {
-                    'X-Auth': getToken()
+                    'X-Auth': authString
                 }
             });
             return response.data.result;
         } catch (error) {
             console.error('Error fetching detailed products from backup API:', error);
         }
-    }, []);
+    }, [authString]);
 
     const getDetailedProducts = useCallback(async (ids) => {
         try {
@@ -38,7 +40,7 @@ const App = () => {
                 params: { ids }
             }, {
                 headers: {
-                    'X-Auth': getToken()
+                    'X-Auth': authString
                 }
             });
             return response.data.result;
@@ -46,21 +48,22 @@ const App = () => {
             console.error('Error fetching detailed products:', error);
             retryGetDetailedProducts(ids);
         }
-    }, [retryGetDetailedProducts]);
+    }, [authString, retryGetDetailedProducts]);
 
-    const retryFetchProducts = useCallback(async () => {
+    const retryFetchProducts = useCallback(async (authString) => {
         try {
             const response = await axios.post(BaseURL.Secondary, {
                 action: 'get_ids',
                 params: { offset: (page - 1) * 50, limit: 50 }
             }, {
                 headers: {
-                    'X-Auth': getToken()
+                    'X-Auth': authString
                 }
             });
             const ids = response.data.result;
             const detailedProducts = await getDetailedProducts(ids);
             setProducts(detailedProducts);
+            setIsLoading(false);
         } catch (error) {
             console.error('Error fetching products from backup API:', error);
         }
@@ -73,75 +76,77 @@ const App = () => {
                 params: { offset: (page - 1) * 50, limit: 50 }
             }, {
                 headers: {
-                    'X-Auth': getToken()
+                    'X-Auth': authString
                 }
             });
             const ids = response.data.result;
             const detailedProducts = await getDetailedProducts(ids);
             setProducts(detailedProducts);
+            setIsLoading(false);
         } catch (error) {
-            console.log(error.status)
-            console.log(error.text)
             console.error('Error fetching products:', error);
-            retryFetchProducts();
+            retryFetchProducts(authString);
         }
-    },[getDetailedProducts, page, retryFetchProducts]);
+    },[authString, getDetailedProducts, page, retryFetchProducts]);
 
 
-    const handleFilter = async () => {
-        try {
-            const response = await axios.post(BaseURL.Primary, {
-                action: 'filter',
-                params: { productName: searchTerm }
-            }, {
-                headers: {
-                    'X-Auth': getToken()
-                }
-            });
+    // const handleFilter = async () => {
+    //     try {
+    //         const response = await axios.post(BaseURL.Primary, {
+    //             action: 'filter',
+    //             params: { productName: searchTerm }
+    //         }, {
+    //             headers: {
+    //                 'X-Auth': authString
+    //             }
+    //         });
 
-            const filteredIds = response.data.result;
-            const detailedFilteredProducts = await getDetailedProducts(filteredIds);
-            setFilteredProducts(detailedFilteredProducts);
-        } catch (error) {
-            console.error('Error filtering products:', error);
-            retryFilter();
-        }
-    };
+    //         const filteredIds = response.data.result;
+    //         const detailedFilteredProducts = await getDetailedProducts(filteredIds);
+    //         setFilteredProducts(detailedFilteredProducts);
+    //     } catch (error) {
+    //         console.error('Error filtering products:', error);
+    //         retryFilter();
+    //     }
+    // };
 
-    const retryFilter = async () => {
-        try {
-            const response = await axios.post(BaseURL.Secondary, {
-                action: 'filter',
-                params: { productName: searchTerm }
-            }, {
-                headers: {
-                    'X-Auth': getToken()
-                }
-            });
+    // const retryFilter = async () => {
+    //     try {
+    //         const response = await axios.post(BaseURL.Secondary, {
+    //             action: 'filter',
+    //             params: { productName: searchTerm }
+    //         }, {
+    //             headers: {
+    //                 'X-Auth': authString
+    //             }
+    //         });
 
-            const filteredIds = response.data.result;
-            const detailedFilteredProducts = await getDetailedProducts(filteredIds);
-            setFilteredProducts(detailedFilteredProducts);
-        } catch (error) {
-            console.error('Error filtering products from backup API:', error);
-        }
-    };
+    //         const filteredIds = response.data.result;
+    //         const detailedFilteredProducts = await getDetailedProducts(filteredIds);
+    //         setFilteredProducts(detailedFilteredProducts);
+    //     } catch (error) {
+    //         console.error('Error filtering products from backup API:', error);
+    //     }
+    // };
 
     const handleSearchChange = (event) => {
-        setSearchTerm(event.target.value);
+        // setSearchTerm(event.target.value);
     };
 
     const handleSearchSubmit = (event) => {
         event.preventDefault();
-        handleFilter();
+        // handleFilter();
     };
 
     useEffect(() => {
-        console.log(getToken())
-        if (getToken) {
+        if (authString) {
             fetchProducts();
         }
-    }, [fetchProducts, page]);
+    }, [authString, fetchProducts]);
+
+    if(isLoading) {
+        return <Loaded />
+    }
 
     return (
         <div>

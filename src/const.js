@@ -1,5 +1,5 @@
 export const BaseURL = {
-    Primary: 'https://api.valantis.store:40000/',
+    Primary: 'http://api.valantis.store:40000/',
     Secondary: 'https://api.valantis.store:41000/'
 };
 
