@@ -2,14 +2,22 @@ import axios from 'axios';
 import { BaseURL } from '../const';
 import { getAuthToken } from '../utils/common';
 
-export const createAPI = () => {
-    const api = axios.create({baseURL: BaseURL.Primary});
+export const createAPI = (actionString, params) => {
+    const api = axios.create({
+        baseURL: BaseURL.Primary,
+        action: actionString,
+    });
 
-    const requestInterceptor = api.interceptors.request.use((config) => {
+    api.interceptors.request.use((config) => {
         const authString = getAuthToken();
+        config.headers['Content-Type'] = 'application/json';
 
-        if (authString && config.headers) {
+        if (authString) {
             config.headers['X-Auth'] = authString;
+        }
+
+        if (params) {
+            config.params = params;
         }
 
         return config;
@@ -23,14 +31,11 @@ export const createAPI = () => {
 
                 api.defaults.baseURL = BaseURL.Secondary;
 
-                return api(error.config);
+                return Promise.reject(error);
             }
-
-            return Promise.reject(error);
         }
     );
 
-    api.interceptors.request.eject(requestInterceptor);
     api.interceptors.response.eject(responseInterceptor);
 
     return api;

@@ -1,7 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
-import { getAuhToken } from './utils/common';
-import { BaseURL } from './const';
+import React, { useState, useEffect } from 'react';
+import { createAPI } from './services/api';
 
 const Loaded = () => {
     return <div>Loading........</div>;
@@ -15,119 +13,23 @@ const App = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
 
-    const authString = getAuhToken();
-
-    const retryGetDetailedProducts = useCallback(async (ids) => {
+    const getProduct = async () => {
+        const api = createAPI('get_ids');
+        console.log(api.toString())
         try {
-            const response = await axios.post(BaseURL.Secondary, {
-                action: 'get_items',
-                params: { ids }
-            }, {
-                headers: {
-                    'X-Auth': authString
-                }
-            });
-            return response.data.result;
+            const response = await api.post();
+            return response;
         } catch (error) {
-            console.error('Error fetching detailed products from backup API:', error);
+            throw new Error(error);
         }
-    }, [authString]);
+    }
 
-    const getDetailedProducts = useCallback(async (ids) => {
-        try {
-            const response = await axios.post(BaseURL.Primary, {
-                action: 'get_items',
-                params: { ids }
-            }, {
-                headers: {
-                    'X-Auth': authString
-                }
-            });
-            return response.data.result;
-        } catch (error) {
-            console.error('Error fetching detailed products:', error);
-            retryGetDetailedProducts(ids);
-        }
-    }, [authString, retryGetDetailedProducts]);
+    useEffect(() => {
+        setProducts(getProduct());
+        console.log(products);
+        setIsLoading(false);
+    },[])
 
-    const retryFetchProducts = useCallback(async (authString) => {
-        try {
-            const response = await axios.post(BaseURL.Secondary, {
-                action: 'get_ids',
-                params: { offset: (page - 1) * 50, limit: 50 }
-            }, {
-                headers: {
-                    'X-Auth': authString
-                }
-            });
-            const ids = response.data.result;
-            const detailedProducts = await getDetailedProducts(ids);
-            setProducts(detailedProducts);
-            setIsLoading(false);
-        } catch (error) {
-            console.error('Error fetching products from backup API:', error);
-        }
-    }, [getDetailedProducts, page]);
-
-    const fetchProducts = useCallback(async () => {
-        try {
-            const response = await axios.post(BaseURL.Primary, {
-                action: 'get_ids',
-                params: { offset: (page - 1) * 50, limit: 50 }
-            }, {
-                headers: {
-                    'X-Auth': authString
-                }
-            });
-            const ids = response.data.result;
-            const detailedProducts = await getDetailedProducts(ids);
-            setProducts(detailedProducts);
-            setIsLoading(false);
-        } catch (error) {
-            console.error('Error fetching products:', error);
-            retryFetchProducts(authString);
-        }
-    },[authString, getDetailedProducts, page, retryFetchProducts]);
-
-
-    // const handleFilter = async () => {
-    //     try {
-    //         const response = await axios.post(BaseURL.Primary, {
-    //             action: 'filter',
-    //             params: { productName: searchTerm }
-    //         }, {
-    //             headers: {
-    //                 'X-Auth': authString
-    //             }
-    //         });
-
-    //         const filteredIds = response.data.result;
-    //         const detailedFilteredProducts = await getDetailedProducts(filteredIds);
-    //         setFilteredProducts(detailedFilteredProducts);
-    //     } catch (error) {
-    //         console.error('Error filtering products:', error);
-    //         retryFilter();
-    //     }
-    // };
-
-    // const retryFilter = async () => {
-    //     try {
-    //         const response = await axios.post(BaseURL.Secondary, {
-    //             action: 'filter',
-    //             params: { productName: searchTerm }
-    //         }, {
-    //             headers: {
-    //                 'X-Auth': authString
-    //             }
-    //         });
-
-    //         const filteredIds = response.data.result;
-    //         const detailedFilteredProducts = await getDetailedProducts(filteredIds);
-    //         setFilteredProducts(detailedFilteredProducts);
-    //     } catch (error) {
-    //         console.error('Error filtering products from backup API:', error);
-    //     }
-    // };
 
     const handleSearchChange = (event) => {
         // setSearchTerm(event.target.value);
@@ -137,12 +39,6 @@ const App = () => {
         event.preventDefault();
         // handleFilter();
     };
-
-    useEffect(() => {
-        if (authString) {
-            fetchProducts();
-        }
-    }, [authString, fetchProducts]);
 
     if(isLoading) {
         return <Loaded />
@@ -155,7 +51,7 @@ const App = () => {
                 <input type="text" value={searchTerm} onChange={handleSearchChange} />
                 <button type="submit">Search</button>
             </form>
-            {filteredProducts.length > 0 ? (
+            {/* {filteredProducts.length > 0 ? (
                 <ul>
                     {filteredProducts.map(product => (
                         <li key={product.id}>
@@ -171,7 +67,7 @@ const App = () => {
                         </li>
                     ))}
                 </ul>
-            )}
+            )} */}
         </div>
     );
 };
