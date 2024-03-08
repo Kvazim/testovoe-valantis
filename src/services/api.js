@@ -22,7 +22,7 @@ export const createAPI = () => {
     api.interceptors.response.use(
         (response) => response,
         async (error) => {
-            if (error.response && error.response.status === 500 && retryCount < MAX_RETRY_COUNT) {
+            if (error.response && retryCount < MAX_RETRY_COUNT) {
                 retryCount++;
                 error.config.baseURL = error.config.baseURL === BaseURL.Primary ? BaseURL.Secondary : BaseURL.Primary;
                 return api.request(error.config);
