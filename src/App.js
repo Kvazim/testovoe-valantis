@@ -13,19 +13,30 @@ const App = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
 
-    const getProduct = async () => {
-        const api = createAPI('get_ids');
-        console.log(api.toString())
+    const getProducts = async () => {
+        const api = createAPI();
+
         try {
-            const response = await api.post();
-            return response;
+            const response = await api.post('',{action: 'get_ids'});
+            const fullProducts = new Set();
+            response.data.result.forEach((id) => fullProducts.add(id));
+
+            return Array.from(fullProducts.keys());
         } catch (error) {
             throw new Error(error);
         }
     }
 
     useEffect(() => {
-        setProducts(getProduct());
+        const fetchData = async () => {
+            const allProducts = await getProducts();
+            setProducts(allProducts);
+            setIsLoading(false);
+        }
+
+        fetchData();
+        // const getAllProduct = getProducts();
+        // setProducts(getProduct());
         console.log(products);
         setIsLoading(false);
     },[])
