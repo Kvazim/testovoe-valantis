@@ -7,7 +7,7 @@ const Loaded = () => {
 
 const App = () => {
     const [products, setProducts] = useState([]);
-    const [filteredProducts, setFilteredProducts] = useState([]);
+    // const [filteredProducts, setFilteredProducts] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -17,7 +17,7 @@ const App = () => {
         const api = createAPI();
 
         try {
-            const response = await api.post('',{action: 'get_ids', params: null });
+            const response = await api.post('', {action: 'get_ids'});
             const fullProducts = new Set();
             response.data.result.forEach((id) => fullProducts.add(id));
 
@@ -27,20 +27,33 @@ const App = () => {
         }
     }
 
+    const getCurrentProducts = async (currentProducts) => {
+        const api = createAPI();
+
+        try {
+            const response = await api.post('', {action: 'get_items', params: {ids: currentProducts}});
+            const fullProducts = new Set();
+            response.data.result.forEach((product) => fullProducts.add(product.id, product));
+            console.log(Array.from(fullProducts.values()))
+            // return Array.from(fullProducts.values());
+            return fullProducts.values();
+        } catch (error) {
+            throw new Error(error);
+        }
+    }
+
     useEffect(() => {
         const fetchData = async () => {
             const allProducts = await getProducts();
-            setProducts(allProducts);
+            const filteredProducts = allProducts.slice((page - 1) * 50, page * 50)
+            const currentProducts = await getCurrentProducts(filteredProducts)
+            setProducts(currentProducts);
             setIsLoading(false);
         }
 
         fetchData();
-        // const getAllProduct = getProducts();
-        // setProducts(getProduct());
-        console.log(products);
-        setIsLoading(false);
     },[])
-
+    console.log(products);
 
     const handleSearchChange = (event) => {
         // setSearchTerm(event.target.value);
@@ -62,23 +75,18 @@ const App = () => {
                 <input type="text" value={searchTerm} onChange={handleSearchChange} />
                 <button type="submit">Search</button>
             </form>
-            {/* {filteredProducts.length > 0 ? (
-                <ul>
-                    {filteredProducts.map(product => (
-                        <li key={product.id}>
-                            {product.product} - {product.price}$
-                        </li>
-                    ))}
-                </ul>
-            ) : (
+            {
                 <ul>
                     {products.map(product => (
-                        <li key={product.id}>
-                            {product.product} - {product.price}$
+                        <li style={{marginBottom: '30px'}} key={product.id}>
+                            {product.id && <div style={{marginBottom: '15px'}}>ID: <div>{product.id}</div></div>}
+                            {product.product && <div style={{marginBottom: '15px'}}>PRODUCT: <div>{product.product}</div></div>}
+                            {product.brand && <div style={{marginBottom: '15px'}}>BRAND: <div>{product.brand}</div></div>}
+                            {product.price && <div>PRICE: {product.price}$</div>}
                         </li>
                     ))}
                 </ul>
-            )} */}
+            }
         </div>
     );
 };
