@@ -17,7 +17,7 @@ const App = () => {
         const api = createAPI();
 
         try {
-            const response = await api.post('',{action: 'get_ids'});
+            const response = await api.post('',{action: 'get_ids', params: null });
             const fullProducts = new Set();
             response.data.result.forEach((id) => fullProducts.add(id));
 

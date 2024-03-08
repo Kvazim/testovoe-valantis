@@ -8,3 +8,5 @@ export const DateTime = {
 } 
 
 export const PASSWORD = 'Valantis';
+
+export const MAX_RETRY_COUNT = 3;

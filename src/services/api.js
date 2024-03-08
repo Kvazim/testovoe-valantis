@@ -1,11 +1,13 @@
 import axios from 'axios';
-import { BaseURL } from '../const';
+import { BaseURL, MAX_RETRY_COUNT } from '../const';
 import { getAuthToken } from '../utils/common';
 
 export const createAPI = () => {
     const api = axios.create({
         baseURL: BaseURL.Primary,
     });
+
+    let retryCount = 0;
 
     api.interceptors.request.use((config) => {
         const authString = getAuthToken();
@@ -17,18 +19,22 @@ export const createAPI = () => {
         return config;
     });
 
-    const responseInterceptor = api.interceptors.response.use(
+    api.interceptors.response.use(
         (response) => response,
-        (error) => {
+        async (error) => {
+            if (error.response && error.response.status === 500 && retryCount < MAX_RETRY_COUNT) {
+                retryCount++;
+                error.config.baseURL = error.config.baseURL === BaseURL.Primary ? BaseURL.Secondary : BaseURL.Primary;
+                return api.request(error.config);
+            }
+
             if (error.response) {
                 console.error(error.response.data.error);
-
-                api.defaults.baseURL = BaseURL.Secondary;
             }
+
+            return Promise.reject(error);
         }
     );
-
-    api.interceptors.response.eject(responseInterceptor);
 
     return api;
 };
