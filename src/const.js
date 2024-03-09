@@ -10,3 +10,5 @@ export const DateTime = {
 export const PASSWORD = 'Valantis';
 
 export const MAX_RETRY_COUNT = 3;
+
+export const MAX_PRODUCT_PER_PAGE = 50;
