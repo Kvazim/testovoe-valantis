@@ -1,63 +1,71 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { createAPI } from './services/api';
 import { MAX_PRODUCT_PER_PAGE } from './const';
 import { Container, Pagination, Stack} from '@mui/material';
+import { getProducts } from './services/api-products';
 
 const Loaded = () => {
-    return <div>Loading........</div>;
+  return <div>Loading........</div>;
 }
 
 const App = () => {
-    const [products, setProducts] = useState([]);
-    // const [filteredProducts, setFilteredProducts] = useState([]);
-    // const [searchTerm, setSearchTerm] = useState('');
-    const [page, setPage] = useState(1);
-    const [pageQty, setPageQty] = useState(0);
-    // const [totalPages, setTotalPages] = useState(1);
-    const [isLoading, setIsLoading] = useState(false);
+  const [products, setProducts] = useState([]);
+  // const [filteredProducts, setFilteredProducts] = useState([]);
+  // const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageQty, setPageQty] = useState(0);
+  // const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
 
-    const getProductsId = async (postParams = null) => {
-        const api = createAPI();
+  const getProductsId = async (postParams = null) => {
+    const api = createAPI();
 
-        try {
-            const response = await api.post('', {action: 'get_ids', ...postParams});
-            const fullProducts = new Set();
+    try {
+      const response = await api.post('', {action: 'get_ids', ...postParams});
+      const fullProducts = new Set();
 
-            response.data.result.forEach((id) => {
-                fullProducts.add(id)
-            });
+      response.data.result.forEach((id) => {
+        fullProducts.add(id)
+      });
 
-            return Array.from(fullProducts.keys());
-        } catch (error) {
-            throw new Error(error);
+      return Array.from(fullProducts.keys());
+    } catch (error) {
+        throw new Error(error);
+      }
+  }
+
+  const getCurrentProducts = async (currentProducts) => {
+    const api = createAPI();
+
+    try {
+      const response = await api.post('', { action: 'get_items', params: { ids: currentProducts } });
+      const filteredProducts = new Map();
+      response.data.result.forEach((product) => {
+        if (!filteredProducts.has(product.id)) {
+          filteredProducts.set(product.id, product);
         }
-    }
+      });
 
-    const getCurrentProducts = async (currentProducts) => {
-        const api = createAPI();
-
-        try {
-            const response = await api.post('', { action: 'get_items', params: { ids: currentProducts } });
-            const filteredProducts = new Map();
-            response.data.result.forEach((product) => {
-                if (!filteredProducts.has(product.id)) {
-                    filteredProducts.set(product.id, product);
-                }
-            });
-    
-            return Array.from(filteredProducts.values());
-        } catch (error) {
-            throw new Error(error);
-        }
+      return Array.from(filteredProducts.values());
+    } catch (error) {
+      throw new Error(error);
     }
+  }
 
     useEffect(() => {
         const getAllProducts = async () => {
             const allProducts = await getProductsId();
             setPageQty(Math.ceil(allProducts.length / MAX_PRODUCT_PER_PAGE))
-        } 
-        
+        }
+
         getAllProducts();
+
+        const getTest = async () => {
+          const testItem = await getProducts('get_fields', {params: {field: "brand"}});
+          console.log(testItem);
+        }
+
+        getTest();
     },[])
 
     useEffect(() => {
@@ -123,9 +131,9 @@ const App = () => {
                     {
                         !!pageQty && (
                             <Pagination
-                                count={pageQty} 
+                                count={pageQty}
                                 page={page}
-                                onChange={(_, num) => setPage(num) } 
+                                onChange={(_, num) => setPage(num) }
                             />
                     )}
                 </Stack>
