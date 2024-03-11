@@ -38,6 +38,11 @@ const App = () => {
     setProducts(Array.from(filteredProducts.values()));
   }
 
+  const getFilteredProducts = async (searchType, value) => {
+    const filteredProducts = await getProducts('filter', {params: {[searchType]: value}});
+    console.log(filteredProducts);
+  }
+
   useEffect(() => {
     getAllProductsId();
   }, []);
@@ -54,7 +59,10 @@ const App = () => {
 
     const handleSearchSubmit = (event) => {
         event.preventDefault();
-        // handleFilter();
+
+        if (Number.isFinite(Number(searchTerm))) {
+          return getFilteredProducts('price', Number(searchTerm));
+        }
     };
 
   if(isLoading) {
@@ -66,7 +74,7 @@ const App = () => {
       <h1>Product List</h1>
       <div>{products.length}</div>
         <form onSubmit={handleSearchSubmit}>
-          <input type="text" value={searchTerm} onChange={handleSearchChange} />
+          <input type="text" value={searchTerm} id='search-input' name='search-input' onChange={handleSearchChange} />
           <button type="submit">Search</button>
         </form>
       {products.length > 0 && (
